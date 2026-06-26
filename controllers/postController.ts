@@ -16,6 +16,21 @@ export const getPosts = async (req: Request, res: Response) => {
   }
 };
 
+export const getOwnPosts = async (req: Request, res: Response) => {
+  const {userId} = getAuth(req)
+  if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+  try {
+    const userPosts = await prisma.post.findMany({
+      where: {authorId: userId, published: true },
+      orderBy: {createdAt: "desc"},
+    });
+    res.json(userPosts)
+  } catch(error) {
+    console.error(error)
+    res.status(5000).json({error: 'Failed to fetch posts'})
+  }
+}
+
 export const createPost = async (req: Request, res: Response) => {
   const { userId } = getAuth(req);
   if (!userId) return res.status(401).json({ error: "Unauthorized" });
@@ -60,6 +75,10 @@ export const createPost = async (req: Request, res: Response) => {
     return res.status(500).json({ error: "Server error" });
   }
 };
+
+// export const updatePost = async (req: Request, res:Response) => {
+//     const {userId} = getAuth(req)
+// }
 export const saveDraft = async (req: Request, res: Response) => {
   const { userId } = getAuth(req);
   if (!userId) return res.status(401).json({ error: 'Unauthorized' });
@@ -89,6 +108,7 @@ export const saveDraft = async (req: Request, res: Response) => {
     res.status(500).json({ error: 'Failed to save draft' });
   }
 };
+
 
 export const deleteDraft = async (req: Request<{ id: string }>, res: Response) => {
   const { userId } = getAuth(req);

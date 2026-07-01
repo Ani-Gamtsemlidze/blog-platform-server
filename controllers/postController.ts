@@ -79,7 +79,7 @@ export const createPost = async (req: Request, res: Response) => {
 export const editPost = async (req: Request, res: Response) => {
   const { userId } = getAuth(req);
   const { slug} = req.params;
-  const { title, content, category, Image } = req.body;
+  const { title, content, category, image } = req.body;
   const post = await prisma.post.findUnique({ where: { slug } });
   if (!post) return res.status(404).json({ message: "Post not found" });
   if (post.authorId !== userId)
@@ -87,48 +87,61 @@ export const editPost = async (req: Request, res: Response) => {
 
    const updated = await prisma.post.update({
     where: { slug },
-    data: { title, content, category, Image },
+    data: { title, content, category, image },
   });
   res.json(updated)
 };
 
+
 export const saveDraft = async (req: Request, res: Response) => {
+
   const { userId } = getAuth(req);
   if (!userId) return res.status(401).json({ error: "Unauthorized" });
 
-  const { id, title, slug, content, category } = req.body;
+  const { id, title, content, category, slug} = req.body;
 
   try {
+    // UPDATE existing draft
     if (id) {
-      // updating an existing draft — verify it belongs to this user first
-      const existing = await prisma.post.findUnique({ where: { id } });
+      const existing = await prisma.post.findUnique({
+        where: { id },
+      });
+
       if (!existing || existing.authorId !== userId) {
         return res.status(404).json({ error: "Draft not found" });
       }
+
       const post = await prisma.post.update({
         where: { id },
-        data: { title, slug, content, category },
+        data: {
+          title,
+          content,
+          category,
+          slug
+        },
       });
+
       return res.status(200).json(post);
     }
 
+    // CREATE new draft (NO slug here)
     const post = await prisma.post.create({
       data: {
         title,
-        slug,
         content,
-        authorId: userId,
         category,
+        authorId: userId,
         published: false,
+        slug
       },
     });
-    res.status(201).json(post);
+
+    return res.status(201).json(post);
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Failed to save draft" });
+    console.error("SAVE DRAFT ERROR:", error);
+    return res.status(500).json({ error: "Failed to save draft" });
   }
 };
-
 export const deleteDraft = async (
   req: Request<{ id: string }>,
   res: Response,
@@ -165,6 +178,23 @@ export const getDrafts = async (req: Request, res: Response) => {
     res.status(500).json({ error: "Failed to fetch drafts" });
   }
 };
+
+export const getDraftById= async (req: Request<{ id: string }>, res: Response) => 
+{
+  const {id} = req.params
+  try {
+    const draft = await prisma.post.findUnique({
+      where:{id},
+      include:{author: true}
+    })
+    if (!draft) return res.status(404).json({ error: "draft not found" });
+    res.json(draft)
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Failed to fetch draft" });
+  }
+}
+
 
 export const getPostBySlug = async (
   req: Request<{ slug: string }>,

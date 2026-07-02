@@ -1,10 +1,9 @@
 import express from "express";
-import { prisma } from "./lib/prisma";
-import webhookRouter from "./routes/webhook";
+import webhookRouter from "./routes/webhook.js";
 import cors from "cors";
 import { clerkClient, clerkMiddleware, getAuth } from "@clerk/express";
-import postRouter from "./routes/posts";
-import uploadRouter from "./routes/upload";
+import postRouter from "./routes/posts.js";
+import uploadRouter from "./routes/upload.js";
 const app = express();
 
 
@@ -22,6 +21,6 @@ app.get("/", (req, res) => {
 });
 
 
-app.listen(3000, () => {
+app.listen(process.env.PORT || 3000, () => {
   console.log("Server running on port 3000");
 });

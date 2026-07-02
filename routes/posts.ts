@@ -1,6 +1,7 @@
 import express from "express";
-import { getPosts, createPost, getPostBySlug, saveDraft, getDrafts, getOwnPosts, editPost, getDraftById, deleteDraft } from "../controllers/postController";
-import { protect } from "../protectMiddleware";
+import {  createPost, getPostBySlug, saveDraft, getDrafts, editPost, getDraftById, deleteDraft } from "../controllers/postController.js";
+import { protect } from "../protectMiddleware.js";
+import { getPosts, getOwnPosts } from "../controllers/feedController.js";
 
 const router = express.Router();
 

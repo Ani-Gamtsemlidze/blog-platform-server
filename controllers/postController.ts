@@ -1,20 +1,6 @@
 import { Request, Response } from "express";
-import { prisma } from "../lib/prisma";
 import { getAuth } from "@clerk/express";
-
-export const getPosts = async (req: Request, res: Response) => {
-  try {
-    const posts = await prisma.post.findMany({
-      where: { published: true },
-      orderBy: { createdAt: "desc" },
-      include: { author: true },
-    });
-    res.json(posts);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Failed to fetch posts" });
-  }
-};
+import { prisma } from "../lib/prisma.js";
 
 export const getOwnPosts = async (req: Request, res: Response) => {
   const { userId } = getAuth(req);
@@ -78,7 +64,7 @@ export const createPost = async (req: Request, res: Response) => {
 
 export const editPost = async (req: Request, res: Response) => {
   const { userId } = getAuth(req);
-  const { slug} = req.params;
+  const { slug} = req.body;
   const { title, content, category, image } = req.body;
   const post = await prisma.post.findUnique({ where: { slug } });
   if (!post) return res.status(404).json({ message: "Post not found" });
@@ -86,7 +72,7 @@ export const editPost = async (req: Request, res: Response) => {
     return res.status(403).json({ message: "Forbidden" });
 
    const updated = await prisma.post.update({
-    where: { slug },
+    where: { slug},
     data: { title, content, category, image },
   });
   res.json(updated)

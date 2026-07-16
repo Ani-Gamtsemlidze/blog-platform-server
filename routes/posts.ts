@@ -2,6 +2,7 @@ import express from "express";
 import {  createPost, getPostBySlug, saveDraft, getDrafts, editPost, getDraftById, deleteDraft } from "../controllers/postController.js";
 import { protect } from "../protectMiddleware.js";
 import { getPosts, getOwnPosts } from "../controllers/feedController.js";
+import { toggleLike } from "../controllers/likesController.js";
 
 const router = express.Router();
 
@@ -12,6 +13,7 @@ router.post('/draft', protect, saveDraft);
 router.get('/drafts',protect, getDrafts);
 router.get('/draft/:id', protect, getDraftById);
 router.delete('/draft/:id', protect, deleteDraft);
+router.post('/:id/likes', protect, toggleLike);
 router.get('/:slug', getPostBySlug);
 router.put('/:slug', protect, editPost)
 

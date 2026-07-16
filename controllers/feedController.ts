@@ -3,6 +3,7 @@ import { getAuth } from "@clerk/express";
 import { prisma } from "../lib/prisma.js";
 
 export const getPosts = async (req: Request, res: Response) => {
+  const {userId} = getAuth(req);
   const rawLimit = Number(req.query.limit);
   const limit =
     Number.isFinite(rawLimit) && rawLimit > 0 ? Math.min(rawLimit, 50) : 10;
@@ -30,7 +31,11 @@ export const getPosts = async (req: Request, res: Response) => {
             }
           : {}),
       },
-      include: { author: true },
+      include: { 
+        author: true, 
+        _count: { select: { likes: true } },
+        likes: userId ? {where: {userId}, select: { id: true} } : false
+      },
       orderBy: [{ createdAt: "desc" }, { id: "desc" }],
       skip: cursor ? 1 : 0,
       cursor: cursor,
@@ -40,7 +45,13 @@ export const getPosts = async (req: Request, res: Response) => {
     const nextCursor = hasMore
       ? trimmedPosts[trimmedPosts.length - 1].id
       : null;
-    res.json({ data: trimmedPosts, hasMore, nextCursor });
+
+      const shapedPosts = trimmedPosts.map(({likes, _count, ...post}) => ({
+        ...post,
+        likeCount: _count.likes,
+        likedByUser: Array.isArray(likes) && likes.length > 0,
+      }))
+    res.json({ data: shapedPosts, hasMore, nextCursor });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Failed to fetch posts" });

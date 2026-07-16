@@ -64,27 +64,24 @@ export const createPost = async (req: Request, res: Response) => {
 
 export const editPost = async (req: Request, res: Response) => {
   const { userId } = getAuth(req);
-  const { slug} = req.body;
-  const { title, content, category, image } = req.body;
+  const { title, content, category, image, slug } = req.body;
   const post = await prisma.post.findUnique({ where: { slug } });
   if (!post) return res.status(404).json({ message: "Post not found" });
   if (post.authorId !== userId)
     return res.status(403).json({ message: "Forbidden" });
 
-   const updated = await prisma.post.update({
-    where: { slug},
+  const updated = await prisma.post.update({
+    where: { slug },
     data: { title, content, category, image },
   });
-  res.json(updated)
+  res.json(updated);
 };
 
-
 export const saveDraft = async (req: Request, res: Response) => {
-
   const { userId } = getAuth(req);
   if (!userId) return res.status(401).json({ error: "Unauthorized" });
 
-  const { id, title, content, category, slug} = req.body;
+  const { id, title, content, category, slug } = req.body;
 
   try {
     // UPDATE existing draft
@@ -103,7 +100,7 @@ export const saveDraft = async (req: Request, res: Response) => {
           title,
           content,
           category,
-          slug
+          slug,
         },
       });
 
@@ -118,7 +115,7 @@ export const saveDraft = async (req: Request, res: Response) => {
         category,
         authorId: userId,
         published: false,
-        slug
+        slug,
       },
     });
 
@@ -165,35 +162,45 @@ export const getDrafts = async (req: Request, res: Response) => {
   }
 };
 
-export const getDraftById= async (req: Request<{ id: string }>, res: Response) => 
-{
-  const {id} = req.params
+export const getDraftById = async (
+  req: Request<{ id: string }>,
+  res: Response,
+) => {
+  const { id } = req.params;
   try {
     const draft = await prisma.post.findUnique({
-      where:{id},
-      include:{author: true}
-    })
+      where: { id },
+      include: { author: true },
+    });
     if (!draft) return res.status(404).json({ error: "draft not found" });
-    res.json(draft)
+    res.json(draft);
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Failed to fetch draft" });
   }
-}
-
+};
 
 export const getPostBySlug = async (
   req: Request<{ slug: string }>,
   res: Response,
 ) => {
   const { slug } = req.params;
+   const {userId} = getAuth(req);
   try {
     const post = await prisma.post.findUnique({
       where: { slug },
-      include: { author: true },
+      include: {
+        author: true,
+        _count: { select: { likes: true } },
+        likes: userId ? { where: { userId }, select: { id: true } } : false,
+      },
     });
     if (!post) return res.status(404).json({ error: "Post not found" });
-    res.json(post);
+     res.json({
+      ...post,
+      likeCount: post._count.likes,
+      likedByUser: userId ? post.likes.length > 0 : false,
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Failed to fetch post" });

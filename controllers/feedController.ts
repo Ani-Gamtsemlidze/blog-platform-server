@@ -83,17 +83,29 @@ export const getOwnPosts = async (req: Request, res: Response) => {
             }
           : {}),
       },
-      include: { author: true },
+      include: {
+        author: true,
+        _count: { select: { likes: true } },
+        likes: userId ? { where: { userId }, select: { id: true } } : false,
+      },
       orderBy: [{ createdAt: "desc" }, { id: "desc" }],
       skip: cursor ? 1 : 0,
       cursor: cursor,
     });
+
     const hasMore = userPosts.length > limit;
     const trimmedPosts = hasMore ? userPosts.slice(0, limit) : userPosts;
     const nextCursor = hasMore
       ? trimmedPosts[trimmedPosts.length - 1].id
       : null;
-    res.json({ data: trimmedPosts, hasMore, nextCursor });
+
+    const shapedPosts = trimmedPosts.map(({ likes, _count, ...post }) => ({
+      ...post,
+      likeCount: _count.likes,
+      likedByUser: Array.isArray(likes) && likes.length > 0,
+    }));
+
+    res.json({ data: shapedPosts, hasMore, nextCursor });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Failed to fetch posts" });

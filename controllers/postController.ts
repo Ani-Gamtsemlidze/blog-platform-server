@@ -2,20 +2,6 @@ import { Request, Response } from "express";
 import { getAuth } from "@clerk/express";
 import { prisma } from "../lib/prisma.js";
 
-export const getOwnPosts = async (req: Request, res: Response) => {
-  const { userId } = getAuth(req);
-  if (!userId) return res.status(401).json({ error: "Unauthorized" });
-  try {
-    const userPosts = await prisma.post.findMany({
-      where: { authorId: userId, published: true },
-      orderBy: { createdAt: "desc" },
-    });
-    res.json(userPosts);
-  } catch (error) {
-    console.error(error);
-    res.status(5000).json({ error: "Failed to fetch posts" });
-  }
-};
 
 export const createPost = async (req: Request, res: Response) => {
   const { userId } = getAuth(req);
@@ -206,3 +192,22 @@ export const getPostBySlug = async (
     res.status(500).json({ error: "Failed to fetch post" });
   }
 };
+
+export const deletePost = async (req: Request<{ id: string }>, res: Response) => {
+    const { userId } = getAuth(req);
+  if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
+  const { id } = req.params;
+
+  try {
+    const existing = await prisma.post.findUnique({ where: { id } });
+    if (!existing || existing.authorId !== userId) {
+      return res.status(404).json({ error: "post not found" });
+    }
+    await prisma.post.delete({ where: { id } });
+    res.status(204).send();
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Failed to delete post" });
+  }
+}

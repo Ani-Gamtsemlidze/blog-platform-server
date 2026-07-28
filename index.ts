@@ -3,6 +3,7 @@ import webhookRouter from "./routes/webhook.js";
 import cors from "cors";
 import { clerkClient, clerkMiddleware, getAuth } from "@clerk/express";
 import postRouter from "./routes/posts.js";
+import commentsRouter from "./routes/comments.js";
 import uploadRouter from "./routes/upload.js";
 const app = express();
 
@@ -13,6 +14,7 @@ app.use(clerkMiddleware())
 // app.use(requireAuth())
 app.use(express.json())
 app.use('/api/posts', postRouter)
+app.use('/api/comments', commentsRouter)
 app.use("/uploads", express.static("uploads"));
 app.use("/api/upload", uploadRouter);
 

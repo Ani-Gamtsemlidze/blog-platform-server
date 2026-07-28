@@ -177,7 +177,7 @@ export const getPostBySlug = async (
       where: { slug },
       include: {
         author: true,
-        _count: { select: { likes: true } },
+        _count: { select: { likes: true, comments:true } },
         likes: userId ? { where: { userId }, select: { id: true } } : false,
       },
     });
@@ -185,6 +185,7 @@ export const getPostBySlug = async (
      res.json({
       ...post,
       likeCount: post._count.likes,
+      commentCount: post._count.comments,
       likedByUser: userId ? post.likes.length > 0 : false,
     });
   } catch (error) {

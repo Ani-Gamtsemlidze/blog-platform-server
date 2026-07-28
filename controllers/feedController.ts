@@ -33,7 +33,7 @@ export const getPosts = async (req: Request, res: Response) => {
       },
       include: { 
         author: true, 
-        _count: { select: { likes: true } },
+        _count: { select: { likes: true, comments: true } },
         likes: userId ? {where: {userId}, select: { id: true} } : false
       },
       orderBy: [{ createdAt: "desc" }, { id: "desc" }],
@@ -49,6 +49,7 @@ export const getPosts = async (req: Request, res: Response) => {
       const shapedPosts = trimmedPosts.map(({likes, _count, ...post}) => ({
         ...post,
         likeCount: _count.likes,
+        commentCount: _count.comments,
         likedByUser: Array.isArray(likes) && likes.length > 0,
       }))
     res.json({ data: shapedPosts, hasMore, nextCursor });
@@ -85,7 +86,7 @@ export const getOwnPosts = async (req: Request, res: Response) => {
       },
       include: {
         author: true,
-        _count: { select: { likes: true } },
+        _count: { select: { likes: true, comments: true } },
         likes: userId ? { where: { userId }, select: { id: true } } : false,
       },
       orderBy: [{ createdAt: "desc" }, { id: "desc" }],
@@ -102,6 +103,7 @@ export const getOwnPosts = async (req: Request, res: Response) => {
     const shapedPosts = trimmedPosts.map(({ likes, _count, ...post }) => ({
       ...post,
       likeCount: _count.likes,
+      commentCount: _count.comments,
       likedByUser: Array.isArray(likes) && likes.length > 0,
     }));
 

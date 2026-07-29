@@ -2,7 +2,6 @@ import { Request, Response } from "express";
 import { getAuth } from "@clerk/express";
 import { prisma } from "../lib/prisma.js";
 
-
 export const createPost = async (req: Request, res: Response) => {
   const { userId } = getAuth(req);
   if (!userId) return res.status(401).json({ error: "Unauthorized" });
@@ -171,22 +170,24 @@ export const getPostBySlug = async (
   res: Response,
 ) => {
   const { slug } = req.params;
-   const {userId} = getAuth(req);
+  const { userId } = getAuth(req);
   try {
     const post = await prisma.post.findUnique({
       where: { slug },
       include: {
         author: true,
-        _count: { select: { likes: true, comments:true } },
+        _count: { select: { likes: true, comments: true } },
         likes: userId ? { where: { userId }, select: { id: true } } : false,
+        savedBy: userId ? { where: { userId }, select: { id: true } } : false,
       },
     });
     if (!post) return res.status(404).json({ error: "Post not found" });
-     res.json({
+    res.json({
       ...post,
       likeCount: post._count.likes,
       commentCount: post._count.comments,
       likedByUser: userId ? post.likes.length > 0 : false,
+      savedByUser:  userId ? post.savedBy.length > 0 : false,
     });
   } catch (error) {
     console.error(error);
@@ -194,8 +195,11 @@ export const getPostBySlug = async (
   }
 };
 
-export const deletePost = async (req: Request<{ id: string }>, res: Response) => {
-    const { userId } = getAuth(req);
+export const deletePost = async (
+  req: Request<{ id: string }>,
+  res: Response,
+) => {
+  const { userId } = getAuth(req);
   if (!userId) return res.status(401).json({ error: "Unauthorized" });
 
   const { id } = req.params;
@@ -211,4 +215,4 @@ export const deletePost = async (req: Request<{ id: string }>, res: Response) =>
     console.error(error);
     res.status(500).json({ error: "Failed to delete post" });
   }
-}
+};

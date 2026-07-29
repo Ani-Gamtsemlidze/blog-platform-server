@@ -3,7 +3,7 @@ import { getAuth } from "@clerk/express";
 import { prisma } from "../lib/prisma.js";
 
 export const getPosts = async (req: Request, res: Response) => {
-  const {userId} = getAuth(req);
+  const { userId } = getAuth(req);
   const rawLimit = Number(req.query.limit);
   const limit =
     Number.isFinite(rawLimit) && rawLimit > 0 ? Math.min(rawLimit, 50) : 10;
@@ -31,10 +31,11 @@ export const getPosts = async (req: Request, res: Response) => {
             }
           : {}),
       },
-      include: { 
-        author: true, 
+      include: {
+        author: true,
         _count: { select: { likes: true, comments: true } },
-        likes: userId ? {where: {userId}, select: { id: true} } : false
+        likes: userId ? { where: { userId }, select: { id: true } } : false,
+        savedBy: userId ? { where: { userId }, select: { id: true } } : false,
       },
       orderBy: [{ createdAt: "desc" }, { id: "desc" }],
       skip: cursor ? 1 : 0,
@@ -46,12 +47,13 @@ export const getPosts = async (req: Request, res: Response) => {
       ? trimmedPosts[trimmedPosts.length - 1].id
       : null;
 
-      const shapedPosts = trimmedPosts.map(({likes, _count, ...post}) => ({
-        ...post,
-        likeCount: _count.likes,
-        commentCount: _count.comments,
-        likedByUser: Array.isArray(likes) && likes.length > 0,
-      }))
+    const shapedPosts = trimmedPosts.map(({ likes, savedBy, _count, ...post }) => ({
+      ...post,
+      likeCount: _count.likes,
+      commentCount: _count.comments,
+      likedByUser: Array.isArray(likes) && likes.length > 0,
+      savedByUser: Array.isArray(savedBy) && savedBy.length > 0,
+    }));
     res.json({ data: shapedPosts, hasMore, nextCursor });
   } catch (error) {
     console.error(error);

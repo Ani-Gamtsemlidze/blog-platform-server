@@ -10,9 +10,8 @@ const app = express();
 
 app.use(cors({origin: process.env.CLIENT_URL || "http://localhost:5173"}))
 app.use("/api/webhooks/clerk", webhookRouter);
-app.use(clerkMiddleware())
-// app.use(requireAuth())
 app.use(express.json())
+app.use(clerkMiddleware())
 app.use('/api/posts', postRouter)
 app.use('/api/comments', commentsRouter)
 app.use("/uploads", express.static("uploads"));

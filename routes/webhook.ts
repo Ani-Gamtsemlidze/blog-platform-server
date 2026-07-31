@@ -6,7 +6,6 @@ const router = express.Router();
 
 router.post("/", express.raw({ type: "application/json" }), async (req, res) => {
   const secret = process.env.CLERK_WEBHOOK_SECRET!;
-
   const wh = new Webhook(secret);
   let event: any;
 
@@ -22,23 +21,35 @@ router.post("/", express.raw({ type: "application/json" }), async (req, res) => 
 
   const { type, data } = event;
 
-  if (type === "user.created") {
-    await prisma.user.create({
-      data: {
-        id: data.id,
-        email: data.email_addresses[0].email_address,
-        name: `${data.first_name} ${data.last_name}`,
-      },
-    });
-  }
+  try {
+    if (type === "user.created" || type === "user.updated") {
+      await prisma.user.upsert({
+        where: { id: data.id },
+        update: {
+          email: data.email_addresses?.[0]?.email_address ?? null,
+          name: `${data.first_name ?? ""} ${data.last_name ?? ""}`.trim(),
+          username: data.username ?? null,
+          imageUrl: data.image_url ?? null,
+        },
+        create: {
+          id: data.id,
+          email: data.email_addresses?.[0]?.email_address ?? null,
+          name: `${data.first_name ?? ""} ${data.last_name ?? ""}`.trim(),
+          username: data.username ?? null,
+          imageUrl: data.image_url ?? null,
+        },
+      });
+    }
 
-  if (type === "user.deleted") {
-    await prisma.user.delete({
-      where: { id: data.id },
-    });
-  }
+    if (type === "user.deleted") {
+      await prisma.user.deleteMany({ where: { id: data.id } });
+    }
 
-  res.status(200).json({ received: true });
+    return res.status(200).json({ received: true });
+  } catch (err) {
+    console.error("Webhook handler error:", err);
+    return res.status(500).json({ error: "Internal error processing webhook" });
+  }
 });
 
 export default router;

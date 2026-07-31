@@ -9,14 +9,17 @@ datasource db {
 }
 
 model User {
-  id        String   @id
-  email     String   @unique
-  name      String?
-  createdAt DateTime @default(now())
-  likes     Like[]
-  comments  Comment[]
-  savedPosts     SavedPost[]
-  posts     Post[]
+  id          String   @id
+  email       String?  @unique
+  name        String?
+  username    String?
+  imageUrl    String?
+  createdAt   DateTime @default(now())
+
+  likes       Like[]
+  comments    Comment[]
+  savedPosts  SavedPost[]
+  posts       Post[]
 }
 
 model Post {

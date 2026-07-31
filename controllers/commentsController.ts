@@ -23,7 +23,7 @@ export const writeComment = async (req: Request, res: Response) => {
       },
       include: {
         author: {
-          select: { id: true, name: true },
+          select: { id: true, name: true, imageUrl: true },
         },
       },
     });
@@ -43,7 +43,7 @@ export const getComments = async (req: Request, res: Response) => {
       orderBy: { createdAt: "desc" },
       include: {
         author: {
-          select: { id: true, name: true },
+          select: { id: true, name: true, imageUrl: true },
         },
       },
     });
